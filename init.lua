@@ -39,7 +39,7 @@ local distances = function(vectors,norm)
    else
       error('norm must be 1 or 2')
    end
-   
+
    -- return dists
    return distances
 end
@@ -52,7 +52,7 @@ local neighbors = function(vectors,norm)
 
    -- compute L2 distances:
    local distance = distances(X,norm)
-   
+
    -- sort:
    local dists,index = distance:sort(2)
 
@@ -105,12 +105,12 @@ end
 
 -- function that draws 2D map of images:
 local function draw_image_map(inp_X, images, inp_map_size, inp_background, inp_background_removal)
-  
+
   -- input options:
   local map_size = inp_map_size or 512
   local background = inp_background or 0
   local background_removal = inp_background_removal or false
-  
+
   -- check inputs are correct:
   local X = inp_X:clone()
   local N = X:size(1)
@@ -120,7 +120,7 @@ local function draw_image_map(inp_X, images, inp_map_size, inp_background, inp_b
   if (type(images) ~= 'table' or X:size(1) ~= #images) and (torch.isTensor(images) == false or images:nDimension() ~= 4 or images:size(1) ~= N) then
     error('Images should be specified as a list of filenames or as an NxCxHxW tensor.')
   end
-  
+
   -- prepare some variables:
   local num_channels = 3
   if torch.isTensor(images) then
@@ -129,10 +129,10 @@ local function draw_image_map(inp_X, images, inp_map_size, inp_background, inp_b
   local map_im = torch.DoubleTensor(num_channels, map_size, map_size):fill(background)
   X = X:add(-X:min(1):expand(N, 2))
   X = X:cdiv(X:max(1):expand(N, 2))
-  
+
   -- fill map with images:
   for n = 1,N do
-    
+
     -- get current image:
     local cur_im
     if type(images) == 'table' then
@@ -140,7 +140,7 @@ local function draw_image_map(inp_X, images, inp_map_size, inp_background, inp_b
     else
       cur_im = images[n]
     end
-     
+
     -- place current image:
     local y_loc = 1 + math.floor(X[n][1] * (map_size - cur_im:size(2)))
     local x_loc = 1 + math.floor(X[n][2] * (map_size - cur_im:size(3)))
@@ -156,22 +156,59 @@ local function draw_image_map(inp_X, images, inp_map_size, inp_background, inp_b
             end
           end
         end
-      end     
+      end
     end
   end
-  
-  -- return map:  
+
+  -- return map:
   return map_im
 end
+
+-- -- function that draw text map:
+-- local function draw_text_map(X, words, inp_map_size, inp_font_size)
+--   -- NOTE: This function assumes vocabulary is indexed by words, values indicate the index of a word into X!
+--
+--   -- input options:
+--   local map_size  = inp_map_size or 512
+--   local font_size = inp_font_size or 9
+--
+--   -- check inputs are correct:
+--   local N = X:size(1)
+--   if X:nDimension() ~= 2 or X:size(2) ~= 2 then
+--     error('This function is designed to operate on 2D embeddings only.')
+--   end
+--   if X:size(1) ~= #words then
+--     error('Number of words should match the number of rows in X.')
+--   end
+--
+--   -- prepare image for rendering:
+--   require 'image'
+--   require 'qtwidget'
+--   require 'qttorch'
+--   local win = qtwidget.newimage(map_size, map_size)
+--
+--   --render the words:
+--   for key,val in pairs(words) do
+--     win:setfont(qt.QFont{serif = false, size = fontsize})
+--     win:moveto(math.floor(X[val][1] * map_size), math.floor(X[val][2] * map_size))
+--     win:show(key)
+--   end
+--
+--   -- render to tensor:
+--   local map_im = win:image():toTensor()
+--
+--   -- return text map:
+--   return map_im
+-- end
 
 -- function that draw text map:
 local function draw_text_map(X, words, inp_map_size, inp_font_size)
   -- NOTE: This function assumes vocabulary is indexed by words, values indicate the index of a word into X!
-  
+
   -- input options:
   local map_size  = inp_map_size or 512
   local font_size = inp_font_size or 9
-  
+
   -- check inputs are correct:
   local N = X:size(1)
   if X:nDimension() ~= 2 or X:size(2) ~= 2 then
@@ -180,23 +217,23 @@ local function draw_text_map(X, words, inp_map_size, inp_font_size)
   if X:size(1) ~= #words then
     error('Number of words should match the number of rows in X.')
   end
-  
+
   -- prepare image for rendering:
   require 'image'
   require 'qtwidget'
   require 'qttorch'
   local win = qtwidget.newimage(map_size, map_size)
-  
+
   --render the words:
-  for key,val in pairs(words) do
+  for ind,word in pairs(words) do
     win:setfont(qt.QFont{serif = false, size = fontsize})
-    win:moveto(math.floor(X[val][1] * map_size), math.floor(X[val][2] * map_size))
-    win:show(key)
+    win:moveto(math.floor(X[ind][1] * map_size), math.floor(X[ind][2] * map_size))
+    win:show(word)
   end
-  
+
   -- render to tensor:
   local map_im = win:image():toTensor()
-  
+
   -- return text map:
   return map_im
 end
